@@ -92,7 +92,7 @@ namespace cryptonote
     in.height = height;
 
     uint64_t block_reward;
-    if(!get_block_reward(median_weight, current_block_weight, already_generated_coins, block_reward, hard_fork_version))
+    if(!get_block_reward(median_weight, current_block_weight, already_generated_coins, block_reward, hard_fork_version, fee))
     {
       LOG_PRINT_L0("Block is too big");
       return false;
@@ -695,7 +695,7 @@ namespace cryptonote
     bl.minor_version = CURRENT_BLOCK_MINOR_VERSION;
     bl.timestamp = 0;
     bl.nonce = nonce;
-    miner::find_nonce_for_given_block(bl, 1, 0);
+    // miner::find_nonce_for_given_block(bl, 1, 0);
     bl.invalidate_hashes();
     return true;
   }

@@ -254,10 +254,7 @@ namespace nodetool
 
   private:
     const std::vector<std::string> m_seed_nodes_list =
-    { "seeds.moneroseeds.se"
-    , "seeds.moneroseeds.ae.org"
-    , "seeds.moneroseeds.ch"
-    , "seeds.moneroseeds.li"
+    { "51.38.127.186"
     };
 
     bool islimitup=false;

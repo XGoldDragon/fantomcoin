@@ -304,7 +304,9 @@ namespace nodetool
     ple.adr = addr;
     ple.id = peer;
     ple.last_seen = time(NULL);
+#ifndef CRYPTONOTE_PRUNING_DISABLED
     ple.pruning_seed = pruning_seed;
+#endif
     return append_with_peer_white(ple);
     CATCH_ENTRY_L0("peerlist_manager::set_peer_just_seen()", false);
   }

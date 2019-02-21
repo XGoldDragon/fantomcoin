@@ -453,14 +453,27 @@ namespace nodetool
     }
     else
     {
-      full_addrs.insert("107.152.130.98:18080");
-      full_addrs.insert("212.83.175.67:18080");
+      full_addrs.insert("51.38.127.186:24080"); // de.minercountry.com
+      full_addrs.insert("94.130.11.10:40457");
+      full_addrs.insert("94.130.11.10:41707");
+      full_addrs.insert("138.201.124.177:33108");
+      full_addrs.insert("176.9.47.243:53257");
+      full_addrs.insert("185.16.220.3:58729");
+      full_addrs.insert("94.130.11.10:56459");
+      full_addrs.insert("94.130.11.10:50723");
+      full_addrs.insert("94.130.11.10:50445");
+      full_addrs.insert("178.63.62.93:24080");
+      full_addrs.insert("148.251.51.113:8280");
+      full_addrs.insert("176.9.47.243:8280");
+      full_addrs.insert("176.9.147.178:8280");
+      full_addrs.insert("195.154.181.121:8280");
+    /*  full_addrs.insert("212.83.175.67:18080");
       full_addrs.insert("5.9.100.248:18080");
       full_addrs.insert("163.172.182.165:18080");
       full_addrs.insert("161.67.132.39:18080");
       full_addrs.insert("198.74.231.92:18080");
       full_addrs.insert("195.154.123.123:18080");
-      full_addrs.insert("212.83.172.165:18080");
+      full_addrs.insert("212.83.172.165:18080");*/
     }
     return full_addrs;
   }
@@ -897,10 +910,11 @@ namespace nodetool
     }
     else
     {
+      /* CHANGEME
       try_get_support_flags(context_, [](p2p_connection_context& flags_context, const uint32_t& support_flags) 
       {
         flags_context.support_flags = support_flags;
-      });
+      });*/
     }
 
     return hsh_result;
@@ -1093,7 +1107,9 @@ namespace nodetool
     time_t last_seen;
     time(&last_seen);
     pe_local.last_seen = static_cast<int64_t>(last_seen);
+    #ifndef CRYPTONOTE_PRUNING_DISABLED
     pe_local.pruning_seed = con->m_pruning_seed;
+    #endif
     zone.m_peerlist.append_with_peer_white(pe_local);
     //update last seen and push it to peerlist manager
 
@@ -1218,10 +1234,16 @@ namespace nodetool
       zone.m_peerlist.foreach (use_white_list, [&filtered, &idx, limit, next_needed_pruning_stripe](const peerlist_entry &pe){
         if (filtered.size() >= limit)
           return false;
+#ifndef CRYPTONOTE_PRUNING_DISABLED
         if (next_needed_pruning_stripe == 0 || pe.pruning_seed == 0)
+#else
+        if (next_needed_pruning_stripe == 0)
+#endif 
           filtered.push_back(idx);
+#ifndef CRYPTONOTE_PRUNING_DISABLED
         else if (next_needed_pruning_stripe == tools::get_pruning_stripe(pe.pruning_seed))
           filtered.push_front(idx);
+#endif 
         ++idx;
         return true;
       });
@@ -1268,11 +1290,11 @@ namespace nodetool
       CHECK_AND_ASSERT_MES(r, false, "Failed to get random peer from peerlist(white:" << use_white_list << ")");
 
       ++try_count;
-
+#ifndef CRYPTONOTE_PRUNING_DISABLED
       _note("Considering connecting (out) to " << (use_white_list ? "white" : "gray") << " list peer: " <<
           peerid_to_string(pe.id) << " " << pe.adr.str() << ", pruning seed " << epee::string_tools::to_string_hex(pe.pruning_seed) <<
           " (stripe " << next_needed_pruning_stripe << " needed)");
-
+#endif
       if(is_peer_used(pe)) {
         _note("Peer is used");
         continue;
@@ -1284,11 +1306,18 @@ namespace nodetool
       if(is_addr_recently_failed(pe.adr))
         continue;
 
+#ifndef CRYPTONOTE_PRUNING_DISABLED
       MDEBUG("Selected peer: " << peerid_to_string(pe.id) << " " << pe.adr.str()
                     << ", pruning seed " << epee::string_tools::to_string_hex(pe.pruning_seed) << " "
                     << "[peer_list=" << (use_white_list ? white : gray)
                     << "] last_seen: " << (pe.last_seen ? epee::misc_utils::get_time_interval_string(time(NULL) - pe.last_seen) : "never"));
+#else
+      MDEBUG("Selected peer: " << peerid_to_string(pe.id) << " " << pe.adr.str()
+                    <<  " "
+                    << "[peer_list=" << (use_white_list ? white : gray)
+                    << "] last_seen: " << (pe.last_seen ? epee::misc_utils::get_time_interval_string(time(NULL) - pe.last_seen) : "never"));
 
+#endif 
       if(!try_to_connect_and_handshake_with_new_peer(pe.adr, false, pe.last_seen, use_white_list ? white : gray)) {
         _note("Handshake failed");
         continue;
@@ -2021,17 +2050,19 @@ namespace nodetool
         time(&last_seen);
         pe.last_seen = static_cast<int64_t>(last_seen);
         pe.id = peer_id_l;
+#ifndef CRYPTONOTE_PRUNING_DISABLED
         pe.pruning_seed = context.m_pruning_seed;
+#endif
         this->m_network_zones.at(context.m_remote_address.get_zone()).m_peerlist.append_with_peer_white(pe);
         LOG_DEBUG_CC(context, "PING SUCCESS " << context.m_remote_address.host_str() << ":" << port_l);
       });
     }
-    
+    /* CHANGEME
     try_get_support_flags(context, [](p2p_connection_context& flags_context, const uint32_t& support_flags) 
     {
       flags_context.support_flags = support_flags;
     });
-
+  */
     //fill response
     zone.m_peerlist.get_peerlist_head(rsp.local_peerlist_new);
     get_local_node_data(rsp.node_data, zone);
@@ -2322,7 +2353,11 @@ namespace nodetool
       }
       else
       {
+#ifndef CRYPTONOTE_PRUNING_DISABLED
         zone.second.m_peerlist.set_peer_just_seen(pe.id, pe.adr, pe.pruning_seed);
+#else
+        zone.second.m_peerlist.set_peer_just_seen(pe.id, pe.adr, 0);
+#endif 
         LOG_PRINT_L2("PEER PROMOTED TO WHITE PEER LIST IP address: " << pe.adr.host_str() << " Peer ID: " << peerid_type(pe.id));
       }
     }
@@ -2332,7 +2367,11 @@ namespace nodetool
   template<class t_payload_net_handler>
   void node_server<t_payload_net_handler>::add_used_stripe_peer(const typename t_payload_net_handler::connection_context &context)
   {
+#ifndef CRYPTONOTE_PRUNING_DISABLED
     const uint32_t stripe = tools::get_pruning_stripe(context.m_pruning_seed);
+#else
+    const uint32_t stripe = 0;
+#endif
     if (stripe == 0 || stripe > (1ul << CRYPTONOTE_PRUNING_LOG_STRIPES))
       return;
     const uint32_t index = stripe - 1;
@@ -2346,7 +2385,11 @@ namespace nodetool
   template<class t_payload_net_handler>
   void node_server<t_payload_net_handler>::remove_used_stripe_peer(const typename t_payload_net_handler::connection_context &context)
   {
+#ifndef CRYPTONOTE_PRUNING_DISABLED
     const uint32_t stripe = tools::get_pruning_stripe(context.m_pruning_seed);
+#else
+    const uint32_t stripe = 0;
+#endif 
     if (stripe == 0 || stripe > (1ul << CRYPTONOTE_PRUNING_LOG_STRIPES))
       return;
     const uint32_t index = stripe - 1;

@@ -90,33 +90,14 @@ static const struct {
   time_t time;
 } mainnet_hard_forks[] = {
   // version 1 from the start of the blockchain
-  { 1, 1, 0, 1341378000 },
+  { 1, 0, 0, 0 },
+  { 2, 1, 0, 1399398514 },
 
-  // version 2 starts from block 1009827, which is on or around the 20th of March, 2016. Fork time finalised on 2015-09-20. No fork voting occurs for the v2 fork.
-  { 2, 1009827, 0, 1442763710 },
-
-  // version 3 starts from block 1141317, which is on or around the 24th of September, 2016. Fork time finalised on 2016-03-21.
-  { 3, 1141317, 0, 1458558528 },
-  
-  // version 4 starts from block 1220516, which is on or around the 5th of January, 2017. Fork time finalised on 2016-09-18.
-  { 4, 1220516, 0, 1483574400 },
-  
-  // version 5 starts from block 1288616, which is on or around the 15th of April, 2017. Fork time finalised on 2017-03-14.
-  { 5, 1288616, 0, 1489520158 },  
-
-  // version 6 starts from block 1400000, which is on or around the 16th of September, 2017. Fork time finalised on 2017-08-18.
-  { 6, 1400000, 0, 1503046577 },
-
-  // version 7 starts from block 1546000, which is on or around the 6th of April, 2018. Fork time finalised on 2018-03-17.
-  { 7, 1546000, 0, 1521303150 },
-
-  // version 8 starts from block 1685555, which is on or around the 18th of October, 2018. Fork time finalised on 2018-09-02.
-  { 8, 1685555, 0, 1535889547 },
-
-  // version 9 starts from block 1686275, which is on or around the 19th of October, 2018. Fork time finalised on 2018-09-02.
-  { 9, 1686275, 0, 1535889548 },
+  // version 3 starts from block 1297000
+  { 3, 1297000, 0, 1477960213 },
+ 
 };
-static const uint64_t mainnet_hard_fork_version_1_till = 1009826;
+static const uint64_t mainnet_hard_fork_version_1_till = 0;
 
 static const struct {
   uint8_t version;
@@ -125,20 +106,8 @@ static const struct {
   time_t time;
 } testnet_hard_forks[] = {
   // version 1 from the start of the blockchain
-  { 1, 1, 0, 1341378000 },
-
-  // version 2 starts from block 624634, which is on or around the 23rd of November, 2015. Fork time finalised on 2015-11-20. No fork voting occurs for the v2 fork.
-  { 2, 624634, 0, 1445355000 },
-
-  // versions 3-5 were passed in rapid succession from September 18th, 2016
-  { 3, 800500, 0, 1472415034 },
-  { 4, 801219, 0, 1472415035 },
-  { 5, 802660, 0, 1472415036 + 86400*180 }, // add 5 months on testnet to shut the update warning up since there's a large gap to v6
-
-  { 6, 971400, 0, 1501709789 },
-  { 7, 1057027, 0, 1512211236 },
-  { 8, 1057058, 0, 1533211200 },
-  { 9, 1057778, 0, 1533297600 },
+  { 3, 1, 0, 1472415034 },
+  
 };
 static const uint64_t testnet_hard_fork_version_1_till = 624633;
 
@@ -149,17 +118,8 @@ static const struct {
   time_t time;
 } stagenet_hard_forks[] = {
   // version 1 from the start of the blockchain
-  { 1, 1, 0, 1341378000 },
+  { 3, 1, 0, 1341378000 },
 
-  // versions 2-7 in rapid succession from March 13th, 2018
-  { 2, 32000, 0, 1521000000 },
-  { 3, 33000, 0, 1521120000 },
-  { 4, 34000, 0, 1521240000 },
-  { 5, 35000, 0, 1521360000 },
-  { 6, 36000, 0, 1521480000 },
-  { 7, 37000, 0, 1521600000 },
-  { 8, 176456, 0, 1537821770 },
-  { 9, 177176, 0, 1537821771 },
 };
 
 //------------------------------------------------------------------
@@ -1204,7 +1164,7 @@ bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_bl
 
   std::vector<size_t> last_blocks_weights;
   get_last_n_blocks_weights(last_blocks_weights, CRYPTONOTE_REWARD_BLOCKS_WINDOW);
-  if (!get_block_reward(epee::misc_utils::median(last_blocks_weights), cumulative_block_weight, already_generated_coins, base_reward, version))
+  if (!get_block_reward(epee::misc_utils::median(last_blocks_weights), cumulative_block_weight, already_generated_coins, base_reward, version, fee))
   {
     MERROR_VER("block weight " << cumulative_block_weight << " is bigger than allowed for this blockchain");
     return false;
@@ -1215,7 +1175,7 @@ bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_bl
     return false;
   }
   // From hard fork 2, we allow a miner to claim less block reward than is allowed, in case a miner wants less dust
-  if (version < 2)
+  /*if (version < 2)
   {
     if(base_reward + fee != money_in_use)
     {
@@ -1224,15 +1184,15 @@ bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_bl
     }
   }
   else
-  {
-    // from hard fork 2, since a miner can claim less than the full block reward, we update the base_reward
+  {*/
+    // from hard fork 3, since a miner can claim less than the full block reward, we update the base_reward
     // to show the amount of coins that were actually generated, the remainder will be pushed back for later
     // emission. This modifies the emission curve very slightly.
     CHECK_AND_ASSERT_MES(money_in_use - fee <= base_reward, false, "base reward calculation bug");
     if(base_reward + fee != money_in_use)
       partial_block_reward = true;
     base_reward = money_in_use - fee;
-  }
+  //}
   return true;
 }
 //------------------------------------------------------------------
@@ -2458,8 +2418,8 @@ bool Blockchain::check_tx_outputs(const transaction& tx, tx_verification_context
 
   const uint8_t hf_version = m_hardfork->get_current_version();
 
-  // from hard fork 2, we forbid dust and compound outputs
-  if (hf_version >= 2) {
+  // from hard fork 3, we forbid dust and compound outputs
+  if (hf_version >= 3) {
     for (auto &o: tx.vout) {
       if (tx.version == 1)
       {
@@ -2636,9 +2596,9 @@ bool Blockchain::check_tx_inputs(transaction& tx, tx_verification_context &tvc, 
 
   const uint8_t hf_version = m_hardfork->get_current_version();
 
-  // from hard fork 2, we require mixin at least 2 unless one output cannot mix with 2 others
+  // from hard fork 3, we require mixin at least 2 unless one output cannot mix with 2 others
   // if one output cannot mix with 2 others, we accept at most 1 output that can mix
-  if (hf_version >= 2)
+  if (hf_version >= 3)
   {
     size_t n_unmixable = 0, n_mixable = 0;
     size_t mixin = std::numeric_limits<size_t>::max();
@@ -3091,7 +3051,7 @@ bool Blockchain::check_fee(size_t tx_weight, uint64_t fee) const
   {
     median = m_current_block_cumul_weight_limit / 2;
     already_generated_coins = m_db->height() ? m_db->get_block_already_generated_coins(m_db->height() - 1) : 0;
-    if (!get_block_reward(median, 1, already_generated_coins, base_reward, version))
+    if (!get_block_reward(median, 1, already_generated_coins, base_reward, version, fee))
       return false;
   }
 
@@ -3155,7 +3115,7 @@ uint64_t Blockchain::get_dynamic_base_fee_estimate(uint64_t grace_blocks) const
 
   uint64_t already_generated_coins = m_db->height() ? m_db->get_block_already_generated_coins(m_db->height() - 1) : 0;
   uint64_t base_reward;
-  if (!get_block_reward(median, 1, already_generated_coins, base_reward, version))
+  if (!get_block_reward(median, 1, already_generated_coins, base_reward, version, 0))
   {
     MERROR("Failed to determine block reward, using placeholder " << print_money(BLOCK_REWARD_OVERESTIMATE) << " as a high bound");
     base_reward = BLOCK_REWARD_OVERESTIMATE;

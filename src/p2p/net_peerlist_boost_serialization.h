@@ -141,11 +141,15 @@ namespace boost
       a & pl.last_seen;
       if (ver < 1)
       {
+#ifndef CRYPTONOTE_PRUNING_DISABLED
         if (!typename Archive::is_saving())
           pl.pruning_seed = 0;
+#endif
         return;
       }
+#ifndef CRYPTONOTE_PRUNING_DISABLED
       a & pl.pruning_seed;
+#endif
 #ifdef CRYPTONOTE_PRUNING_DEBUG_SPOOF_SEED
       if (!typename Archive::is_saving())
       {

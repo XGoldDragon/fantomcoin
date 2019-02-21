@@ -74,13 +74,17 @@ namespace nodetool
     AddressType adr;
     peerid_type id;
     int64_t last_seen;
+#ifndef CRYPTONOTE_PRUNING_DISABLED
     uint32_t pruning_seed;
+#endif
 
     BEGIN_KV_SERIALIZE_MAP()
       KV_SERIALIZE(adr)
       KV_SERIALIZE(id)
       KV_SERIALIZE(last_seen)
+#ifndef CRYPTONOTE_PRUNING_DISABLED
       KV_SERIALIZE_OPT(pruning_seed, (uint32_t)0)
+#endif
     END_KV_SERIALIZE_MAP()
   };
   typedef peerlist_entry_base<epee::net_utils::network_address> peerlist_entry;
@@ -126,7 +130,11 @@ namespace nodetool
     ss << std::setfill ('0') << std::setw (8) << std::hex << std::noshowbase;
     for(const peerlist_entry& pe: pl)
     {
+#ifndef CRYPTONOTE_PRUNING_DISABLED
       ss << pe.id << "\t" << pe.adr.str() << " \tpruning seed " << pe.pruning_seed << " \tlast_seen: " << epee::misc_utils::get_time_interval_string(now_time - pe.last_seen) << std::endl;
+#else
+      ss << pe.id << "\t" << pe.adr.str() << " \tlast_seen: " << epee::misc_utils::get_time_interval_string(now_time - pe.last_seen) << std::endl;
+#endif 
     }
     return ss.str();
   }
@@ -209,7 +217,11 @@ namespace nodetool
             {
               const epee::net_utils::network_address  &na = p.adr;
               const epee::net_utils::ipv4_network_address &ipv4 = na.as<const epee::net_utils::ipv4_network_address>();
+  #ifndef CRYPTONOTE_PRUNING_DISABLED
               local_peerlist.push_back(peerlist_entry_base<network_address_old>({{ipv4.ip(), ipv4.port()}, p.id, p.last_seen, p.pruning_seed}));
+  #else
+              local_peerlist.push_back(peerlist_entry_base<network_address_old>({{ipv4.ip(), ipv4.port()}, p.id, p.last_seen}));
+  #endif 
             }
             else
               MDEBUG("Not including in legacy peer list: " << p.adr.str());
@@ -224,7 +236,11 @@ namespace nodetool
             std::vector<peerlist_entry_base<network_address_old>> local_peerlist;
             epee::serialization::selector<is_store>::serialize_stl_container_pod_val_as_blob(local_peerlist, stg, hparent_section, "local_peerlist");
             for (const auto &p: local_peerlist)
+#ifndef CRYPTONOTE_PRUNING_DISABLED            
               ((response&)this_ref).local_peerlist_new.push_back(peerlist_entry({epee::net_utils::ipv4_network_address(p.adr.ip, p.adr.port), p.id, p.last_seen, p.pruning_seed}));
+#else
+              ((response&)this_ref).local_peerlist_new.push_back(peerlist_entry({epee::net_utils::ipv4_network_address(p.adr.ip, p.adr.port), p.id, p.last_seen}));
+#endif 
           }
         }
       END_KV_SERIALIZE_MAP()

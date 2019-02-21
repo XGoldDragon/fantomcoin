@@ -40,6 +40,8 @@ using namespace cryptonote;
 
 static uint8_t get_block_vote(const cryptonote::block &b)
 {
+  return b.major_version;
+  
   // Pre-hardfork blocks have a minor version hardcoded to 0.
   // For the purposes of voting, we consider 0 to refer to
   // version number 1, which is what all blocks from the genesis
@@ -385,6 +387,9 @@ uint8_t HardFork::get_current_version() const
 
 uint8_t HardFork::get_ideal_version() const
 {
+  // CHANGEME XMR (block minor_version)
+  return 0;
+
   CRITICAL_REGION_LOCAL(lock);
   return heights.back().version;
 }

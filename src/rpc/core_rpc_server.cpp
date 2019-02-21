@@ -909,20 +909,38 @@ namespace cryptonote
     for (auto & entry : white_list)
     {
       if (entry.adr.get_type_id() == epee::net_utils::ipv4_network_address::get_type_id())
+#ifndef CRYPTONOTE_PRUNING_DISABLED
         res.white_list.emplace_back(entry.id, entry.adr.as<epee::net_utils::ipv4_network_address>().ip(),
             entry.adr.as<epee::net_utils::ipv4_network_address>().port(), entry.last_seen, entry.pruning_seed);
+#else
+        res.white_list.emplace_back(entry.id, entry.adr.as<epee::net_utils::ipv4_network_address>().ip(),
+            entry.adr.as<epee::net_utils::ipv4_network_address>().port(), entry.last_seen, 0);
+#endif 
       else
+#ifndef CRYPTONOTE_PRUNING_DISABLED
         res.white_list.emplace_back(entry.id, entry.adr.str(), entry.last_seen, entry.pruning_seed);
+#else
+        res.white_list.emplace_back(entry.id, entry.adr.str(), entry.last_seen, 0);
+#endif
     }
 
     res.gray_list.reserve(gray_list.size());
     for (auto & entry : gray_list)
     {
       if (entry.adr.get_type_id() == epee::net_utils::ipv4_network_address::get_type_id())
+#ifndef CRYPTONOTE_PRUNING_DISABLED
         res.gray_list.emplace_back(entry.id, entry.adr.as<epee::net_utils::ipv4_network_address>().ip(),
             entry.adr.as<epee::net_utils::ipv4_network_address>().port(), entry.last_seen, entry.pruning_seed);
+#else
+        res.gray_list.emplace_back(entry.id, entry.adr.as<epee::net_utils::ipv4_network_address>().ip(),
+            entry.adr.as<epee::net_utils::ipv4_network_address>().port(), entry.last_seen, 0);
+#endif
       else
+#ifndef CRYPTONOTE_PRUNING_DISABLED
         res.gray_list.emplace_back(entry.id, entry.adr.str(), entry.last_seen, entry.pruning_seed);
+#else
+        res.gray_list.emplace_back(entry.id, entry.adr.str(), entry.last_seen, 0);
+#endif 
     }
 
     res.status = CORE_RPC_STATUS_OK;
