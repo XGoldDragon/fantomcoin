@@ -466,10 +466,13 @@ namespace cryptonote
 
     BEGIN_SERIALIZE()
       VARINT_FIELD(major_version)
+      if (major_version > BLOCK_MAJOR_VERSION_3) return false;
       VARINT_FIELD(minor_version)
-      VARINT_FIELD(timestamp)
+      if (major_version < BLOCK_MAJOR_VERSION_2)
+        VARINT_FIELD(timestamp)
       FIELD(prev_id)
-      FIELD(nonce)
+      if (major_version < BLOCK_MAJOR_VERSION_2)
+        FIELD(nonce)
     END_SERIALIZE()
   };
 
@@ -511,6 +514,8 @@ namespace cryptonote
   inline serializable_root_block make_serializable_root_block(const block& b, bool hashing_serialization, bool header_only)
   {
 	  block & block_ref = const_cast<block&>(b);
+    MDEBUG("Generating serializable bytecoin block... using parent block major ver " 
+		  << (unsigned)block_ref.major_version << " nonce " << block_ref.parent_block.nonce << " ts " << block_ref.timestamp);
 	  return serializable_root_block(block_ref.parent_block, block_ref.timestamp, hashing_serialization, header_only);
   }
 
