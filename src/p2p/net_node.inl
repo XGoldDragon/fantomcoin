@@ -454,6 +454,11 @@ namespace nodetool
     else
     {
       full_addrs.insert("51.38.127.186:24080"); // de.minercountry.com
+      full_addrs.insert("138.201.60.198:8280");
+      full_addrs.insert("78.46.49.212:8280");
+      full_addrs.insert("76.9.2.145:8280");
+      full_addrs.insert("94.130.67.112:24080");
+      full_addrs.insert("144.217.29.36:24080");
       full_addrs.insert("94.130.11.10:40457");
       full_addrs.insert("94.130.11.10:41707");
       full_addrs.insert("138.201.124.177:33108");
