@@ -514,8 +514,6 @@ namespace cryptonote
   inline serializable_root_block make_serializable_root_block(const block& b, bool hashing_serialization, bool header_only)
   {
 	  block & block_ref = const_cast<block&>(b);
-    MDEBUG("Generating serializable bytecoin block... using parent block major ver " 
-		  << (unsigned)block_ref.major_version << " nonce " << block_ref.parent_block.nonce << " ts " << block_ref.timestamp);
 	  return serializable_root_block(block_ref.parent_block, block_ref.timestamp, hashing_serialization, header_only);
   }
 
