@@ -1270,7 +1270,20 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
   }
 
   b.major_version = m_hardfork->get_current_version();
-  b.minor_version = m_hardfork->get_ideal_version();
+  if (b.major_version >= BLOCK_MAJOR_VERSION_2) {
+	  b.minor_version = 0; // CHANGEME
+	  b.parent_block.major_version = BLOCK_MAJOR_VERSION_1;
+	  b.parent_block.minor_version = 0;
+	  b.parent_block.number_of_transactions = 1;
+	  //create MM tag
+	  tx_extra_merge_mining_tag mm_tag = boost::value_initialized<decltype(mm_tag)>();
+	  if (!append_mm_tag_to_extra(b.parent_block.miner_tx.extra, mm_tag)) {
+		  MERROR("Failed to append merge mining tag to extra of the parent block miner transaction");
+		  return false;
+	  }
+  }
+  else
+	  b.minor_version = m_hardfork->get_ideal_version(); // CHANGEME
   b.prev_id = get_tail_id();
   b.timestamp = time(NULL);
 
@@ -1342,6 +1355,7 @@ bool Blockchain::create_block_template(block& b, const account_public_address& m
   MDEBUG("Creating block template: height " << height <<
       ", median weight " << median_weight <<
       ", already generated coins " << already_generated_coins <<
+      ", expected reward " << expected_reward <<
       ", transaction weight " << txs_weight <<
       ", fee " << fee);
 #endif
@@ -1547,13 +1561,20 @@ bool Blockchain::handle_alternative_block(const block& b, const crypto::hash& id
     difficulty_type current_diff = get_next_difficulty_for_alternative_chain(alt_chain, bei);
     CHECK_AND_ASSERT_MES(current_diff, false, "!!!!!!! DIFFICULTY OVERHEAD !!!!!!!");
     crypto::hash proof_of_work = null_hash;
-    get_block_longhash(bei.bl, proof_of_work, bei.height);
+    if (!check_proof_of_work(bei.bl, current_diff, proof_of_work))
+    {
+      MERROR_VER("Block with id: " << id << std::endl << " for alternative chain, does not have enough proof of work: " << proof_of_work << std::endl << "unexpected difficulty: " << current_diff);
+      MDEBUG("Block info - ts " << bei.bl.timestamp << " nonce " << bei.bl.nonce);
+      bvc.m_verifivation_failed = true;
+      return false;
+    }
+    /*get_block_longhash(bei.bl, proof_of_work, bei.height);
     if(!check_hash(proof_of_work, current_diff))
     {
       MERROR_VER("Block with id: " << id << std::endl << " for alternative chain, does not have enough proof of work: " << proof_of_work << std::endl << " expected difficulty: " << current_diff);
       bvc.m_verifivation_failed = true;
       return false;
-    }
+    }*/
 
     if(!prevalidate_miner_transaction(b, bei.height))
     {
@@ -3425,16 +3446,23 @@ leave:
       precomputed = true;
       proof_of_work = it->second;
     }
-    else
-      proof_of_work = get_block_longhash(bl, m_db->height());
+    else {
+      if (!check_proof_of_work(bl, current_diffic, proof_of_work)) 
+      {
+        MERROR_VER("Block with id: " << id << std::endl << "does not have enough proof of work: " << proof_of_work << std::endl << "unexpected difficulty: " << current_diffic);
+        bvc.m_verifivation_failed = true;
+        goto leave;
+      }
+    }
+    //proof_of_work = get_block_longhash(bl, m_db->height());
 
     // validate proof_of_work versus difficulty target
-    if(!check_hash(proof_of_work, current_diffic))
+    /*if(!check_hash(proof_of_work, current_diffic))
     {
       MERROR_VER("Block with id: " << id << std::endl << "does not have enough proof of work: " << proof_of_work << std::endl << "unexpected difficulty: " << current_diffic);
       bvc.m_verifivation_failed = true;
       goto leave;
-    }
+    }*/
   }
 
   // If we're at a checkpoint, ensure that our hardcoded checkpoint hash
@@ -3841,8 +3869,21 @@ void Blockchain::block_longhash_worker(uint64_t height, const epee::span<const b
     if (m_cancel)
        break;
     crypto::hash id = get_block_hash(block);
-    crypto::hash pow = get_block_longhash(block, height++);
-    map.emplace(id, pow);
+    // crypto::hash pow = get_block_longhash(block, height++);
+    //map.emplace(id, pow);
+    crypto::hash pow;
+    if (get_hard_fork_version(height + 1) == BLOCK_MAJOR_VERSION_1) {
+      get_block_longhash(block, height++);
+      map.emplace(id, pow);
+    }
+    else 
+    {
+      if (!get_root_block_longhash(block, pow)) {
+        MDEBUG("Block longhash worker: failed to get root block longhash");
+      }
+      else
+        map.emplace(id, pow);
+    }
   }
 
   slow_hash_free_state();

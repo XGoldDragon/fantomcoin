@@ -1187,7 +1187,8 @@ namespace cryptonote
       LOG_ERROR("Failed to calculate offset for ");
       return false;
     }
-    blobdata hashing_blob = get_block_hashing_blob(b);
+    blobdata hashing_blob;
+    get_block_hashing_blob(b, hashing_blob);
     res.prev_hash = string_tools::pod_to_hex(b.prev_id);
     res.blocktemplate_blob = string_tools::buff_to_hex_nodelimer(block_blob);
     res.blockhashing_blob =  string_tools::buff_to_hex_nodelimer(hashing_blob);
