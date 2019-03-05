@@ -52,7 +52,7 @@
 #define TRANSACTION_VERSION_2                           2
 #define CURRENT_TRANSACTION_VERSION                     TRANSACTION_VERSION_1
 #define CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT              60*60*2
-#define CRYPTONOTE_DEFAULT_TX_SPENDABLE_AGE             10
+#define CRYPTONOTE_DEFAULT_TX_SPENDABLE_AGE             0
 
 #define BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW               60
 
